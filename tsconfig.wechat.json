@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["minigame-api-typings"]
+  },
+  "include": ["src/shared/**/*.ts", "src/platforms/wechat/**/*.ts"]
+}
