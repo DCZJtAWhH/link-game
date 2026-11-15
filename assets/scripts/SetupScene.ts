@@ -29,6 +29,8 @@ export class SetupScene extends Component {
   private loadError = false;
   private settingsOpen = false;
   private renderKey = '';
+  private clockLabel: Label | null = null;
+  private clockCaption: Label | null = null;
 
   start(): void {
     profiler.hideStats();
@@ -91,9 +93,10 @@ export class SetupScene extends Component {
 
   private render(): void {
     const state = this.session.state;
-    const key = JSON.stringify({ ...state, remaining: Math.ceil(state.remaining), feedback: state.feedback ? { ...state.feedback, remaining: 0 } : null, ready: this.ready, error: this.loadError, settings: this.settingsOpen });
-    if (key === this.renderKey) return;
+    const key = JSON.stringify({ ...state, remaining: 0, feedback: state.feedback ? { ...state.feedback, remaining: 0 } : null, ready: this.ready, error: this.loadError, settings: this.settingsOpen });
+    if (key === this.renderKey) { this.updateClock(state); return; }
     this.renderKey = key;
+    this.clockLabel = null; this.clockCaption = null;
     for (const child of [...this.ui.children]) { child.removeFromParent(); child.destroy(); }
     this.panel(this.ui, 'Background', 0, 0, WIDTH, HEIGHT, PAPER, 0);
     if (!this.ready) {
@@ -129,10 +132,9 @@ export class SetupScene extends Component {
     this.text(this.ui, `第 ${String(state.level).padStart(2, '0')} 关`, 20, -111, 280);
     this.text(this.ui, '/ 40', 12, -54, 277, MUTED);
     this.button(this.ui, '暂停', 128, 280, () => this.session.pause(), { primary: false, width: 64, height: 34 });
-    const rounded = Math.ceil(state.remaining);
-    const time = `${Math.floor(rounded / 60)}:${String(rounded % 60).padStart(2, '0')}`;
-    this.text(this.ui, time, 32, 0, 235, rounded <= 30 ? '#B3583C' : INK);
-    this.text(this.ui, rounded <= 30 ? '时间不多了，专心找下一对' : '相同水果 · 最多两次转弯', 12, 0, 206, rounded <= 30 ? '#B3583C' : MUTED);
+    this.clockLabel = this.text(this.ui, '', 32, 0, 235);
+    this.clockCaption = this.text(this.ui, '', 12, 0, 206);
+    this.updateClock(state);
     this.panel(this.ui, 'BoardField', 0, -5, 332, 408, '#EBEEDC', 22);
     if (state.phase === 'paused') { this.drawPause(state); return; }
     if (state.phase === 'tutorial') { this.drawTutorial(state); return; }
@@ -150,6 +152,15 @@ export class SetupScene extends Component {
       this.text(this.ui, state.reshuffleReason === 'system' ? '系统免费重排' : '换个顺序，继续找', 19, 0, 6);
       this.text(this.ui, '时间已暂停，空位和水果都保留', 12, 0, -20, MUTED);
     }
+  }
+
+  private updateClock(state: GameState): void {
+    if (!this.clockLabel || !this.clockCaption) return;
+    const rounded = Math.ceil(state.remaining);
+    this.clockLabel.string = `${Math.floor(rounded / 60)}:${String(rounded % 60).padStart(2, '0')}`;
+    this.clockLabel.color = this.color(rounded <= 30 ? '#B3583C' : INK);
+    this.clockCaption.string = rounded <= 30 ? '时间不多了，专心找下一对' : '相同水果 · 最多两次转弯';
+    this.clockCaption.color = this.color(rounded <= 30 ? '#B3583C' : MUTED);
   }
 
   private drawBoard(state: GameState): void {
@@ -184,12 +195,12 @@ export class SetupScene extends Component {
   }
 
   private toolButton(state: GameState, tool: Tool, title: string, x: number): void {
-    const enabled = state.phase === 'playing' && state.tools[tool] > 0 && state.feedback?.kind !== 'match';
+    const enabled = state.phase === 'playing' && state.tools[tool] > 0 && state.feedback?.kind !== 'match' && !(tool === 'hint' && state.hint);
     const node = this.panel(this.ui, `Tool-${tool}`, x, -250, 100, 62, enabled ? '#FFFFFF' : '#ECECDF', 15);
     this.image(node, tool, -25, 4, 27, 27);
     this.text(node, title, 14, 15, 10, enabled ? INK : MUTED, 64);
     this.text(node, `余 ${state.tools[tool]} 次`, 10, 15, -10, MUTED, 64);
-    node.on(Node.EventType.TOUCH_END, () => this.act(() => this.session.useTool(tool)), this);
+    if (enabled) node.on(Node.EventType.TOUCH_END, () => this.act(() => this.session.useTool(tool)), this);
   }
 
   private drawPause(state: GameState): void {

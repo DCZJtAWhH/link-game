@@ -1,17 +1,14 @@
 import { expect, test } from 'vitest';
 import { Game } from '../assets/scripts/core/Game';
+import { INITIAL_SEEDS, SHUFFLE_SEEDS, random } from './fixtures';
 
 // Together with game.test.ts: 12 initial samples, exactly three per difficulty tier.
-const INITIAL_SEEDS = [11, 29, 47];
 const TIERS = [
   { level: 1, columns: 4, rows: 4, types: 4 },
   { level: 6, columns: 4, rows: 6, types: 6 },
   { level: 11, columns: 6, rows: 6, types: 8 },
   { level: 21, columns: 6, rows: 8, types: 10 },
 ];
-function random(seed: number): () => number {
-  return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-}
 function storage(level = 1) {
   let saved: unknown = { currentLevel: level };
   return { load: () => saved, save: (value: unknown) => { saved = value; } };
@@ -112,8 +109,22 @@ test('同池初始样本复用：提示仅标出合法对，加时实际生效�
   expect(game.state.remaining).toBe(300);
 });
 
+test('复用初始11样本：已显示的有效提示不重复扣次，消除后可使用剩余提示', () => {
+  const game = new Game({ random: random(11) });
+  game.start(); game.skipTutorial();
+  expect(game.useTool('hint')).toBe(true);
+  const hint = game.state.hint!;
+  expect(game.useTool('hint')).toBe(false);
+  expect(game.state.hint).toEqual(hint);
+  expect(game.state.tools.hint).toBe(1);
+  game.select(hint[0]); game.select(hint[1]); game.advance(0.2);
+  expect(game.state.hint).toBeNull();
+  expect(game.useTool('hint')).toBe(true);
+  expect(game.state.tools.hint).toBe(0);
+  expect(game.state.hint).not.toEqual(hint);
+});
+
 // The only twelve reshuffle samples; system checks below reuse this same pool.
-const SHUFFLE_SEEDS = [101, 103, 107];
 test('四档各3个有空位重排样本保留空位、水果、时间，扣主动次数并完整清盘', () => {
   for (const tier of TIERS) for (const seed of SHUFFLE_SEEDS) {
     const game = new Game({ random: random(seed), storage: storage(tier.level) });

@@ -1,9 +1,6 @@
 import { expect, test } from 'vitest';
 import { Game } from '../assets/scripts/core/Game';
-
-function random(seed: number): () => number {
-  return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-}
+import { random } from './fixtures';
 
 test('复用初始11样本：首次第1关三步图解期间停表，完成保存已读并开始挑战', () => {
   let saved: unknown;
