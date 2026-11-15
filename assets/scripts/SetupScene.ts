@@ -5,17 +5,18 @@ import {
 import { Game } from './core/Game';
 import type { GameState } from './core/Game';
 import type { Point } from './core/board';
+import { localProgressStorage } from './platform/Storage';
 
 const { ccclass } = _decorator;
 const WIDTH = 360, HEIGHT = 640;
 const INK = '#294B3B', PAPER = '#FAF7EF', GREEN = '#326B4F';
-const FRUITS = ['苹果', '香蕉', '葡萄', '橙子'];
-const FRUIT_COLORS = ['#D94E48', '#D8AE26', '#8663A8', '#E38A35'];
+const FRUITS = ['苹果', '香蕉', '葡萄', '橙子', '草莓', '西瓜', '菠萝', '梨', '桃子', '樱桃'];
+const FRUIT_COLORS = ['#D94E48', '#D8AE26', '#8663A8', '#E38A35', '#CA4478', '#55965E', '#AD9535', '#8BA443', '#E6A39A', '#A53E4D'];
 
 /** Cocos owns display, input and lifecycle; the gameplay module owns every rule. */
 @ccclass('SetupScene')
 export class SetupScene extends Component {
-  private readonly session = new Game();
+  private readonly session = new Game({ storage: localProgressStorage });
   private ui!: Node;
   private renderKey = '';
 
@@ -59,16 +60,18 @@ export class SetupScene extends Component {
     if (state.phase === 'home') {
       this.label(this.ui, '水果连连看', 30, 172);
       this.label(this.ui, '两次转弯，找到同一种水果', 14, 126);
-      this.label(this.ui, '第 1 关 · 4 × 4 · 5 分钟', 16, 34);
-      this.button(this.ui, '开始挑战', 0, -30, () => this.session.start());
+      this.label(this.ui, `当前第 ${state.progress.currentLevel} 关 · 5 分钟`, 16, 34);
+      this.button(this.ui, state.progress.completed ? '重玩第 40 关' : '开始挑战', 0, -30, () => this.session.start());
+      if (state.progress.completed) this.label(this.ui, '本期挑战完成！', 20, -106);
       this.label(this.ui, '配对消除 · 路径可经过外围', 13, -244);
       return;
     }
-    this.label(this.ui, `第 ${state.level} 关`, 20, 268);
+    this.label(this.ui, `第 ${state.level} 关`, 20, 280);
     const minutes = Math.floor(Math.ceil(state.remaining) / 60);
     const seconds = Math.ceil(state.remaining) % 60;
-    this.label(this.ui, `${minutes}:${String(seconds).padStart(2, '0')}`, 30, 220, state.remaining <= 30 ? '#B95738' : INK);
-    this.label(this.ui, state.remaining <= 30 ? '时间不多了，慢慢看，稳稳连' : '相同水果 · 最多两次转弯', 13, 181);
+    this.label(this.ui, `${minutes}:${String(seconds).padStart(2, '0')}`, 30, 238, state.remaining <= 30 ? '#B95738' : INK);
+    this.label(this.ui, state.remaining <= 30 ? '时间不多了，慢慢看，稳稳连' : '相同水果 · 最多两次转弯', 13, 199);
+    if (state.phase === 'playing' || state.phase === 'reshuffling') this.button(this.ui, '暂停', 126, 280, () => this.session.pause(), false, 64);
     if (state.phase === 'paused') {
       this.panel(this.ui, 'CoveredBoard', 0, 10, 322, 300, '#E7EADC');
       this.label(this.ui, '已暂停', 26, 50);
@@ -78,28 +81,35 @@ export class SetupScene extends Component {
       return;
     }
     this.drawBoard(state);
-    if (state.phase === 'playing') {
-      this.button(this.ui, '暂停', 0, -240, () => this.session.pause(), false);
+    if (state.phase === 'playing' || state.phase === 'reshuffling') {
+      this.button(this.ui, `提示 ${state.tools.hint}`, -108, -244, () => this.session.useTool('hint'), false, 100);
+      this.button(this.ui, `重排 ${state.tools.shuffle}`, 0, -244, () => this.session.useTool('shuffle'), false, 100);
+      this.button(this.ui, `+20秒 ${state.tools.time}`, 108, -244, () => this.session.useTool('time'), false, 100);
+      if (state.phase === 'reshuffling') {
+        this.panel(this.ui, 'ReshuffleNotice', 0, -10, 300, 70, PAPER);
+        this.label(this.ui, state.reshuffleReason === 'system' ? '没有合法配对，系统免费重排' : '正在重排，时间已暂停', 15, -10);
+      }
       this.label(this.ui, '点击图块选中 · 再点一次取消', 12, -288);
     } else {
       const won = state.phase === 'won';
       this.panel(this.ui, 'ResultPanel', 0, -174, 322, 228, PAPER);
-      this.label(this.ui, won ? '通关啦！' : '时间到了', 25, -103);
-      this.button(this.ui, won ? '再玩一局' : '重新挑战', 0, -163, () => this.session.start());
+      this.label(this.ui, won ? state.level === 40 ? '本期挑战完成！' : '通关啦！' : '时间到了', 25, -103);
+      this.button(this.ui, won ? state.level === 40 ? '重玩第 40 关' : '下一关' : '重新挑战', 0, -163, () => this.session.start());
       this.button(this.ui, '返回首页', 0, -226, () => this.session.home(), false);
     }
   }
 
   private drawBoard(state: GameState): void {
-    const cell = Math.min(58, 276 / state.columns);
-    const top = (state.rows - 1) * cell / 2 + 30;
+    const cell = Math.min(58, 264 / state.columns, 320 / state.rows);
+    const top = (state.rows - 1) * cell / 2 - 12;
     const position = (point: Point): Point => ({ x: (point.x - (state.columns - 1) / 2) * cell, y: top - point.y * cell });
     state.board.forEach((fruit, index) => {
       if (fruit === null) return;
       const point = position({ x: index % state.columns, y: Math.floor(index / state.columns) });
       const selected = state.selected === index;
+      const hinted = state.hint?.includes(index);
       const mismatch = state.feedback?.kind === 'mismatch' && state.feedback.pair.includes(index);
-      const tile = this.panel(this.ui, `Tile-${index}`, point.x, point.y, cell - 6, cell - 6, mismatch ? '#F4CFC2' : selected ? '#CDE3BA' : '#ECE8D9', 10);
+      const tile = this.panel(this.ui, `Tile-${index}`, point.x, point.y, cell - 6, cell - 6, mismatch ? '#F4CFC2' : selected ? '#CDE3BA' : hinted ? '#F6E7A0' : '#ECE8D9', 10);
       const dot = tile.getComponent(Graphics)!;
       dot.fillColor = this.color(FRUIT_COLORS[fruit] ?? GREEN);
       dot.circle(0, 5, cell * 0.19); dot.fill();
@@ -142,9 +152,9 @@ export class SetupScene extends Component {
     return label;
   }
 
-  private button(parent: Node, text: string, x: number, y: number, action: () => void, primary = true): void {
-    const node = this.panel(parent, text, x, y, 210, 48, primary ? GREEN : '#E5E8DC');
-    this.label(node, text, 17, 0, primary ? '#FFFFFF' : INK);
+  private button(parent: Node, text: string, x: number, y: number, action: () => unknown, primary = true, width = 210): void {
+    const node = this.panel(parent, text, x, y, width, 48, primary ? GREEN : '#E5E8DC');
+    this.label(node, text, width < 150 ? 14 : 17, 0, primary ? '#FFFFFF' : INK);
     node.on(Node.EventType.TOUCH_END, () => this.act(action), this);
   }
 }
