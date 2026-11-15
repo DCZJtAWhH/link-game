@@ -169,12 +169,6 @@ importers:
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
-      esbuild:
-        specifier: 0.28.2
-        version: 0.28.2
-      minigame-api-typings:
-        specifier: 3.8.22
-        version: 3.8.22
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -743,9 +737,6 @@ packages:
   magic-string@1.4.5:
     resolution: {integrity: sha512-oLLC2+YvQUfAa+vxoufE/yc1icb87M9iXIRqAoR/2EhE/8cb3SF/+Gi0c2By1B+5Vz2e2vQtUvHiu1+63Znh+w==}
 
-  minigame-api-typings@3.8.22:
-    resolution: {integrity: sha512-QE6DMlL96uHSxtvV5DMHQJ7uYDKyVM/kZBo5ynZ2C1rK5P4X+d6RVMyZk/Ammuy4mAEYpSixsY0aWqCF73pnUg==}
-
   nanoid@3.3.20:
     resolution: {integrity: sha512-uKdg2G3GNCKQn9byYOpxbGqrT2fGO5KRt5J/8b3pok8rT6qxGWF6hxMyJiEYtAf+FVyYuD9hRaDqX5uPFYJ4ZQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -1183,6 +1174,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.28.2
       '@esbuild/win32-ia32': 0.28.2
       '@esbuild/win32-x64': 0.28.2
+    optional: true
 
   estree-walker@3.0.3:
     dependencies:
@@ -1249,8 +1241,6 @@ snapshots:
   magic-string@1.4.5:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
-
-  minigame-api-typings@3.8.22: {}
 
   nanoid@3.3.20: {}
 

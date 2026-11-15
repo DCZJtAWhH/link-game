@@ -1,8 +1,10 @@
 ---
-status: accepted
+status: superseded by ADR-0002
 ---
 
 # 使用TypeScript与Canvas 2D，共用浏览器和微信玩法逻辑
+
+此决策已由 [ADR 0002：使用 Cocos Creator 3.8 LTS](0002-cocos-creator-3-8-lts.md) 取代。
 
 首期为棋盘固定、动画较少的二维连连看，由一人借助AI开发，同时需要本地浏览器预览和微信小游戏工程交付。选择TypeScript与Canvas 2D，玩法逻辑和关卡配置共用，平台差异通过画布、输入、音频、存储及生命周期适配处理。
 

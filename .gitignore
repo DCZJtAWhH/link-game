@@ -1,5 +1,11 @@
 node_modules/
 dist/
+build/
+library/
+local/
+profiles/
+temp/
+.cocos-local.json
 coverage/
 *.tsbuildinfo
 *.log

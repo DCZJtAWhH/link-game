@@ -1,0 +1,22 @@
+{
+  "name": "link-game",
+  "platform": "wechatgame",
+  "buildPath": "project://build",
+  "outputName": "wechatgame",
+  "startScene": "5dabd35e-6ea6-4fea-b635-dca52e9e1682",
+  "scenes": [
+    {
+      "url": "db://assets/scenes/Main.scene",
+      "uuid": "5dabd35e-6ea6-4fea-b635-dca52e9e1682"
+    }
+  ],
+  "debug": true,
+  "md5Cache": false,
+  "mainBundleCompressionType": "merge_dep",
+  "packages": {
+    "wechatgame": {
+      "appid": "",
+      "orientation": "portrait"
+    }
+  }
+}
