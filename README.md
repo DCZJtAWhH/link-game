@@ -2,7 +2,7 @@
 
 使用 **Cocos Creator 3.8.8（3.8 LTS）+ TypeScript** 开发微信小游戏，浏览器用于日常预览。技术选型见 [ADR 0002](docs/adr/0002-cocos-creator-3-8-lts.md)，领域用语见 [GLOSSARY.md](GLOSSARY.md)，首期玩法规格见 [Issue #1](https://github.com/DCZJtAWhH/link-game/issues/1)。旧规格中的原生 Canvas 2D 与手工平台适配方案由 ADR 0002 取代。
 
-当前完成基础环境与最小 2D 工程：主场景显示“本地环境已就绪”，点击或触摸后显示“输入正常”。棋盘、配对、关卡与道具尚未开发，环境搭建完成不代表 [Issue #2](https://github.com/DCZJtAWhH/link-game/issues/2) 的可玩单局已经交付。
+当前实现 [Issue #2](https://github.com/DCZJtAWhH/link-game/issues/2) 的第 1 关可玩单局：首页开始、随机 4×4 棋盘、合法连线与原位消除、300 秒倒计时、超时重试及暂停恢复。暂用四种有文字和颜色区别的水果图案；40 关、道具、长期进度、正式素材与音频由后续阶段补齐。
 
 ## 环境要求
 
@@ -53,7 +53,7 @@ $env:COCOS_CREATOR = 'D:\app\CocosCreator\3.8.8\CocosCreator.exe'
 | `pnpm build:wechat` | 用 Creator 构建微信小游戏，输出 `build/wechatgame/` |
 | `pnpm build` | 顺序构建两端 |
 | `pnpm typecheck` | 严格检查引擎脚本与辅助工具代码 |
-| `pnpm test` / `pnpm test:watch` | Vitest 测试入口；当前暂无玩法测试，明确报告 No test files found |
+| `pnpm test` / `pnpm test:watch` | 通过公开 `Game` 入口检查首档 3 个固定初始样本及复用它们的时间／状态行为 |
 | `pnpm check` | 检查编辑器路径、构建两端、类型检查、运行测试入口 |
 
 `pnpm check` 先构建再检查类型，因此新检出的工程也能生成 `temp/tsconfig.cocos.json` 和引擎声明。单独运行 `pnpm typecheck` 前，需至少用 Creator 打开或构建过一次工程；不要手写或提交 `temp/` 下的引擎声明。
@@ -72,20 +72,27 @@ Vite 只用于静态产物预览和 Vitest 的工具依赖；游戏编译与平�
 
 微信工程目前仅做构建检查，**微信开发者工具与真机运行尚未验证**。
 
-## 本次验证
+## 单局试玩与样本检查
 
-已通过锁文件安装、`pnpm check` 中的两端实际 Creator 构建与严格类型检查，以及 Chrome 对浏览器产物的鼠标和移动视口触摸检查。浏览器检查确认场景绘制、输入反馈正常，没有脚本异常或资源加载失败。Vitest 当前报告暂无测试；手机真机、微信模拟器与微信真机均未验证。
+构建后运行 `pnpm preview`，点击“开始挑战”。点选相同水果，连线需横纵行进、最多两次转弯，允许经过棋盘外围的一圈空白。重复点选取消，误配会短暂提示并选择后一个图块；暂停或切到后台会遮住棋盘，返回后点击“继续挑战”。清盘可再玩一局，超时可重试，返回首页不保留棋盘。
+
+`pnpm test` 使用固定种子 11、29、47，只有这 3 个第 1 难度档初始棋盘。通过 `Game.start/select/advance/state` 检查尺寸、16 个图块、4 种水果、偶数数量，并将构造时保留的清盘顺序作为正常点击输入回放至空。暂停、错误点击、重试、超时锁定及最后配对跨过动画时间的检查均复用这组样本，不扩大随机样本池。逻辑测试不依赖 Creator 生成文件；引擎类型检查仍需先构建。
+
+手机真机、微信开发者工具模拟器及微信真机均未验收；微信构建成功仅表示工程产物已生成。
+
+本阶段实际通过 `pnpm test`（4 项检查）、`pnpm typecheck`、`pnpm build:browser` 和 `pnpm build:wechat`。Chrome 360×640 竖屏复用种子 11 检查了鼠标开始与合法消除、触摸暂停与恢复、暂停期间时间保持不变，未发现脚本异常或游戏资源加载失败。
 
 ## 目录与开发边界
 
 ```text
-assets/scenes/Main.scene       最小主场景
-assets/scripts/SetupScene.ts   环境检查组件；后续显示和输入组件放在这里
-assets/scripts/core/          后续平台无关玩法逻辑的位置，首次实现时再创建
+assets/scenes/Main.scene       主场景
+assets/scripts/SetupScene.ts   Cocos 显示、输入及前后台暂停适配
+assets/scripts/core/Game.ts    唯一主要玩法公开边界
+assets/scripts/core/board.ts   内部路径与构造式生成，不直接作为测试入口
 settings/v2/packages/         项目设置与 2D 引擎模块配置
 build-config/                 Web Mobile 与微信构建配置
 scripts/cocos.mjs             编辑器定位、启动与构建命令
-tests/                        后续玩法测试的位置，首次实现时再创建
+tests/game.test.ts            3 个初始棋盘样本与单局行为检查
 docs/adr/                     架构决策
 ```
 
