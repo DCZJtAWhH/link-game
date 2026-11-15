@@ -2,7 +2,7 @@
 
 使用 **Cocos Creator 3.8.8（3.8 LTS）+ TypeScript** 开发微信小游戏，浏览器用于日常预览。技术选型见 [ADR 0002](docs/adr/0002-cocos-creator-3-8-lts.md)，领域用语见 [GLOSSARY.md](GLOSSARY.md)，首期玩法规格见 [Issue #1](https://github.com/DCZJtAWhH/link-game/issues/1)。旧规格中的原生 Canvas 2D 与手工平台适配方案由 ADR 0002 取代。
 
-当前已实现可玩的 40 关顺序挑战：合法连线与原位消除、300 秒倒计时、超时重试、暂停恢复、三种道具、系统免费重排和本地长期进度。正式界面包含十种统一风格水果、三步玩法图解、本地音乐及音效；综合交付记录由 [Issue #5](https://github.com/DCZJtAWhH/link-game/issues/5) 汇总。
+当前已实现可玩的 40 关顺序挑战：合法连线与原位消除、300 秒倒计时、超时重试、暂停恢复、三种道具、系统免费重排和本地长期进度。正式界面包含十种统一风格水果、三步玩法图解、本地音乐及音效。完整交付清单、固定 24 个样本、实际结果及已知限制见 [首期交付与验收记录](docs/acceptance.md)。
 
 ## 环境要求
 
@@ -91,7 +91,7 @@ Vite 只用于静态产物预览和 Vitest 的工具依赖；游戏编译与平�
 
 手机真机、微信开发者工具模拟器及微信真机均未验收；微信构建成功仅表示工程产物已生成。
 
-本阶段实际通过 `pnpm test`（13 项检查）、`pnpm typecheck`、`pnpm build:browser` 和 `pnpm build:wechat`。Chrome 360×640 竖屏复用现有种子 11：第 1 关首次三步引导停表、鼠标配对；第 21 关 6×8 水果辨识和触摸提示／配对；暂停重看规则返回暂停、音乐实际播放／暂停停播／开关生效、偏好刷新保存、后台遮挡与主动恢复。未发现脚本异常或游戏资源加载失败。前一阶段还已检查三道具、通关保存及刷新续关。
+实际检查通过 `pnpm test`（13 项分组检查、24 个登记棋盘样本）、`pnpm typecheck`、`pnpm build:browser` 和 `pnpm build:wechat`。Chrome 360×640 竖屏复用已有样本条件检查基本流程；详细操作和实际结果见 [验收记录](docs/acceptance.md#实际检查结果)。两端产物均包含全部 15 张本地 PNG 和 6 个 WAV，微信 AppID 模板保持空值。
 
 ## 图解、声音与本地素材
 
