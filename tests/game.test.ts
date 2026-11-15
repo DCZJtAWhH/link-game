@@ -1,11 +1,6 @@
 import { expect, test } from 'vitest';
 import { Game } from '../assets/scripts/core/Game';
-
-// The agreed public gameplay boundary; these three seeds are the entire first-tier pool.
-export const INITIAL_SEEDS = [11, 29, 47];
-function random(seed: number): () => number {
-  return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-}
+import { INITIAL_SEEDS, random } from './fixtures';
 
 test('第1关三个初始样本符合数量约束，并经合法配对完整清盘', () => {
   for (const seed of INITIAL_SEEDS) {

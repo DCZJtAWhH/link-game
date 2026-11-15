@@ -156,6 +156,7 @@ export class Game {
     if (tool === 'time') {
       state.remaining += 20;
     } else if (tool === 'hint') {
+      if (state.hint) return false;
       const pair = this.findPair();
       if (!pair) return false;
       state.hint = pair;

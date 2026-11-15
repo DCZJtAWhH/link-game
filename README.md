@@ -91,7 +91,7 @@ Vite 只用于静态产物预览和 Vitest 的工具依赖；游戏编译与平�
 
 手机真机、微信开发者工具模拟器及微信真机均未验收；微信构建成功仅表示工程产物已生成。
 
-实际检查通过 `pnpm test`（13 项分组检查、24 个登记棋盘样本）、`pnpm typecheck`、`pnpm build:browser` 和 `pnpm build:wechat`。Chrome 360×640 竖屏复用已有样本条件检查基本流程；详细操作和实际结果见 [验收记录](docs/acceptance.md#实际检查结果)。两端产物均包含全部 15 张本地 PNG 和 6 个 WAV，微信 AppID 模板保持空值。
+实际检查通过 `pnpm test`（14 项分组检查、24 个登记棋盘样本）、`pnpm typecheck`、`pnpm build:browser` 和 `pnpm build:wechat`。Chrome 360×640 竖屏复用已有样本条件检查基本流程及跨秒输入；详细操作和实际结果见 [验收记录](docs/acceptance.md#实际检查结果)。两端产物均包含全部 15 张本地 PNG 和 6 个 WAV，微信 AppID 模板保持空值。
 
 ## 图解、声音与本地素材
 
@@ -129,6 +129,7 @@ scripts/cocos.mjs             编辑器定位、启动与构建命令
 tests/game.test.ts            3 个初始棋盘样本与单局行为检查
 tests/progression.test.ts     其余 9 个初始、12 个重排样本及闯关／道具／存档检查
 tests/presentation.test.ts    复用已有样本的引导停表与暂停重看检查
+tests/fixtures.ts             固定初始／重排种子和共享可复现随机流
 docs/adr/                     架构决策
 ```
 
