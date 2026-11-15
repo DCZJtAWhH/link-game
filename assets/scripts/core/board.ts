@@ -33,7 +33,25 @@ export function connection(board: readonly (number | null)[], columns: number, r
  * (when every row has at most one) cells in consecutive occupied rows. No retries.
  */
 export function generate(columns: number, rows: number, types: number, random: () => number): BoardLayout {
-  const geometry: (number | null)[] = Array<number>(columns * rows).fill(0);
+  const occupied: (number | null)[] = Array<number>(columns * rows).fill(0);
+  const fruitPairs = Array.from({ length: occupied.length / 2 }, (_, index) => index % types);
+  return construct(occupied, columns, rows, fruitPairs, random);
+}
+
+/** Reassign only the remaining fruit pairs to the current occupied geometry. */
+export function rearrange(board: readonly (number | null)[], columns: number, rows: number, random: () => number): BoardLayout {
+  const counts = new Map<number, number>();
+  board.forEach(fruit => { if (fruit !== null) counts.set(fruit, (counts.get(fruit) ?? 0) + 1); });
+  const fruitPairs: number[] = [];
+  for (const [fruit, count] of counts) {
+    if (count % 2 !== 0) throw new Error('Remaining fruit counts must be even');
+    for (let pair = 0; pair < count / 2; pair++) fruitPairs.push(fruit);
+  }
+  return construct(board, columns, rows, fruitPairs, random);
+}
+
+function construct(occupied: readonly (number | null)[], columns: number, rows: number, fruitPairs: number[], random: () => number): BoardLayout {
+  const geometry = [...occupied];
   const solution: Pair[] = [];
   while (geometry.some(cell => cell !== null)) {
     const candidates: Pair[] = [];
@@ -48,7 +66,6 @@ export function generate(columns: number, rows: number, types: number, random: (
     solution.push(pair);
     geometry[pair[0]] = null; geometry[pair[1]] = null;
   }
-  const fruitPairs = solution.map((_, index) => index % types);
   for (let index = fruitPairs.length - 1; index > 0; index--) {
     const other = Math.floor(random() * (index + 1));
     [fruitPairs[index], fruitPairs[other]] = [fruitPairs[other]!, fruitPairs[index]!];
