@@ -4,13 +4,14 @@ import { LEVELS } from './levels';
 import { readProgress } from './progress';
 import type { Progress, ProgressStorage } from './progress';
 
-export type Phase = 'home' | 'playing' | 'paused' | 'reshuffling' | 'won' | 'lost';
+export type Phase = 'home' | 'tutorial' | 'playing' | 'paused' | 'reshuffling' | 'won' | 'lost';
 export type Tool = 'hint' | 'shuffle' | 'time';
 export interface Feedback { kind: 'match' | 'mismatch'; pair: Pair; path: Point[]; remaining: number }
 export interface GameState {
   progress: Progress;
   phase: Phase;
   level: number;
+  tutorialStep: number;
   columns: number;
   rows: number;
   board: (number | null)[];
@@ -30,8 +31,9 @@ export class Game {
   private readonly storage?: ProgressStorage;
   private progress: Progress;
   private shuffleRemaining = 0;
+  private tutorialReturn: 'playing' | 'paused' = 'playing';
   private pausedPhase: 'playing' | 'reshuffling' = 'playing';
-  private current: Omit<GameState, 'progress'> = { phase: 'home', level: 1, columns: 4, rows: 4, board: [], solution: [], selected: null, remaining: 300, feedback: null, tools: { hint: 2, shuffle: 1, time: 1 }, hint: null, reshuffleReason: null };
+  private current: Omit<GameState, 'progress'> = { phase: 'home', level: 1, tutorialStep: 0, columns: 4, rows: 4, board: [], solution: [], selected: null, remaining: 300, feedback: null, tools: { hint: 2, shuffle: 1, time: 1 }, hint: null, reshuffleReason: null };
 
   constructor(options: GameOptions = {}) {
     this.random = options.random ?? Math.random;
@@ -50,7 +52,8 @@ export class Game {
     const config = LEVELS[this.progress.currentLevel - 1]!;
     const layout = generate(config.columns, config.rows, config.types, this.random);
     this.shuffleRemaining = 0;
-    this.current = { phase: 'playing', level: config.number, columns: config.columns, rows: config.rows, ...layout, selected: null, remaining: config.seconds, feedback: null, tools: { hint: 2, shuffle: 1, time: 1 }, hint: null, reshuffleReason: null };
+    this.tutorialReturn = 'playing';
+    this.current = { phase: config.number === 1 && !this.progress.tutorialSeen ? 'tutorial' : 'playing', tutorialStep: 0, level: config.number, columns: config.columns, rows: config.rows, ...layout, selected: null, remaining: config.seconds, feedback: null, tools: { hint: 2, shuffle: 1, time: 1 }, hint: null, reshuffleReason: null };
   }
 
   select(index: number): void {
@@ -80,7 +83,7 @@ export class Game {
   advance(seconds: number): void {
     if (!Number.isFinite(seconds) || seconds <= 0) return;
     const state = this.current;
-    if (state.phase === 'paused' || state.phase === 'home') return;
+    if (state.phase === 'paused' || state.phase === 'home' || state.phase === 'tutorial') return;
     if (state.phase === 'reshuffling') {
       const elapsed = Math.min(seconds, this.shuffleRemaining);
       this.shuffleRemaining -= elapsed;
@@ -119,6 +122,26 @@ export class Game {
   }
   resume(): void { if (this.current.phase === 'paused') this.current.phase = this.pausedPhase; }
   home(): void { this.current.phase = 'home'; this.current.selected = null; this.current.feedback = null; }
+
+  nextTutorial(): void {
+    if (this.current.phase !== 'tutorial') return;
+    if (this.current.tutorialStep < 2) this.current.tutorialStep++;
+    else this.skipTutorial();
+  }
+
+  skipTutorial(): void {
+    if (this.current.phase !== 'tutorial') return;
+    this.current.phase = this.tutorialReturn;
+    this.progress.tutorialSeen = true;
+    this.saveProgress();
+  }
+
+  showRules(): void {
+    if (this.current.phase !== 'paused') return;
+    this.tutorialReturn = 'paused';
+    this.current.tutorialStep = 0;
+    this.current.phase = 'tutorial';
+  }
 
   updatePreferences(preferences: Partial<Pick<Progress, 'tutorialSeen' | 'music' | 'effects'>>): void {
     for (const key of ['tutorialSeen', 'music', 'effects'] as const) {

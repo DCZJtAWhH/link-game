@@ -10,7 +10,7 @@ function random(seed: number): () => number {
 test('第1关三个初始样本符合数量约束，并经合法配对完整清盘', () => {
   for (const seed of INITIAL_SEEDS) {
     const game = new Game({ random: random(seed) });
-    game.start();
+    game.start(); game.skipTutorial();
     const initial = game.state;
     expect([initial.columns, initial.rows, initial.board.length]).toEqual([4, 4, 16]);
     const counts = new Map<number, number>();
@@ -49,7 +49,7 @@ test('第1关三个初始样本符合数量约束，并经合法配对完整清�
 
 test('同一初始样本复用：选中取消、误配保留后图块，暂停停止倒计时，超时锁定并可重试', () => {
   const game = new Game({ random: random(INITIAL_SEEDS[0]!) });
-  game.start();
+  game.start(); game.skipTutorial();
   const initial = game.state;
   game.select(0);
   expect(game.state.selected).toBe(0);
@@ -70,7 +70,7 @@ test('同一初始样本复用：选中取消、误配保留后图块，暂停�
   game.select(0); game.resume(); game.advance(50);
   expect(game.state.phase).toBe('lost');
   expect(game.state.remaining).toBe(0);
-  game.start();
+  game.start(); game.skipTutorial();
   expect(game.state.remaining).toBe(300);
   expect(game.state.phase).toBe('playing');
   game.home(); game.advance(500);
@@ -79,7 +79,7 @@ test('同一初始样本复用：选中取消、误配保留后图块，暂停�
 
 test('同一初始样本复用：最后合法配对在超时前接受后通关，动画不改判且结果锁定', () => {
   const game = new Game({ random: random(INITIAL_SEEDS[1]!) });
-  game.start();
+  game.start(); game.skipTutorial();
   const solution = game.state.solution;
   for (const [first, second] of solution.slice(0, -1)) {
     game.select(first); game.select(second); game.advance(0.2);
@@ -97,7 +97,7 @@ test('同一初始样本复用：最后合法配对在超时前接受后通关�
 
 test('调用方读取棋盘与回放顺序不会改变对局', () => {
   const game = new Game({ random: random(INITIAL_SEEDS[2]!) });
-  game.start();
+  game.start(); game.skipTutorial();
   const state = game.state;
   state.board.fill(null);
   state.solution[0]![0] = -1;

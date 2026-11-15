@@ -29,7 +29,7 @@ function clear(game: Game): void {
 test('其余三档各3个初始样本尺寸、水果类型和偶数数量正确，公开操作可完整清盘', () => {
   for (const tier of TIERS.slice(1)) for (const seed of INITIAL_SEEDS) {
     const game = new Game({ random: random(seed), storage: storage(tier.level) });
-    game.start();
+    game.start(); game.skipTutorial();
     const state = game.state;
     expect([state.level, state.columns, state.rows]).toEqual([tier.level, tier.columns, tier.rows]);
     expect(state.board).toHaveLength(tier.columns * tier.rows);
@@ -45,7 +45,7 @@ test('其余三档各3个初始样本尺寸、水果类型和偶数数量正确�
 test('通关立即保存下一关，失败或退出不倒退，重开只恢复长期进度', () => {
   const store = storage();
   const game = new Game({ random: random(11), storage: store });
-  game.start();
+  game.start(); game.skipTutorial();
   const solution = game.state.solution;
   for (const [first, second] of solution.slice(0, -1)) {
     game.select(first); game.select(second); game.advance(0.2);
@@ -55,14 +55,14 @@ test('通关立即保存下一关，失败或退出不倒退，重开只恢复�
   // Persistence happens at acceptance, before a result animation or next-level click.
   expect(new Game({ storage: store }).state.progress.currentLevel).toBe(2);
   game.home();
-  game.start();
+  game.start(); game.skipTutorial();
   expect(game.state.level).toBe(2);
   game.advance(300);
   expect(game.state.phase).toBe('lost');
   expect(game.state.progress.currentLevel).toBe(2);
   const reopened = new Game({ random: random(11), storage: store });
   expect(reopened.state.phase).toBe('home');
-  reopened.start();
+  reopened.start(); reopened.skipTutorial();
   expect(reopened.state.remaining).toBe(300);
   expect(reopened.state.board.filter(fruit => fruit !== null)).toHaveLength(16);
 });
@@ -70,12 +70,12 @@ test('通关立即保存下一关，失败或退出不倒退，重开只恢复�
 test('通过第40关保存本期完成，返回及重玩不生成第41关或丢失完成标记', () => {
   const store = storage(40);
   const game = new Game({ random: random(47), storage: store });
-  game.start(); clear(game);
+  game.start(); game.skipTutorial(); clear(game);
   expect(game.state.progress).toMatchObject({ currentLevel: 40, completed: true });
   game.home();
   const reopened = new Game({ random: random(47), storage: store });
   expect(reopened.state.progress).toMatchObject({ currentLevel: 40, completed: true });
-  reopened.start(); reopened.advance(300); reopened.start();
+  reopened.start(); reopened.skipTutorial(); reopened.advance(300); reopened.start(); reopened.skipTutorial();
   expect(reopened.state.level).toBe(40);
   expect(reopened.state.progress.completed).toBe(true);
 });
@@ -84,7 +84,7 @@ test('同池初始样本复用：提示仅标出合法对，加时实际生效�
   const game = new Game({ random: random(29) });
   expect(game.useTool('hint')).toBe(false);
   expect(game.useTool('time')).toBe(false);
-  game.start();
+  game.start(); game.skipTutorial();
   const before = game.state.board;
   expect(game.state.tools).toEqual({ hint: 2, shuffle: 1, time: 1 });
   expect(game.useTool('hint')).toBe(true);
@@ -106,7 +106,7 @@ test('同池初始样本复用：提示仅标出合法对，加时实际生效�
   game.resume(); game.advance(400);
   expect(game.useTool('hint')).toBe(false);
   expect(game.useTool('shuffle')).toBe(false);
-  game.start();
+  game.start(); game.skipTutorial();
   expect(game.state.tools).toEqual({ hint: 2, shuffle: 1, time: 1 });
   expect(game.state.hint).toBeNull();
   expect(game.state.remaining).toBe(300);
@@ -117,7 +117,7 @@ const SHUFFLE_SEEDS = [101, 103, 107];
 test('四档各3个有空位重排样本保留空位、水果、时间，扣主动次数并完整清盘', () => {
   for (const tier of TIERS) for (const seed of SHUFFLE_SEEDS) {
     const game = new Game({ random: random(seed), storage: storage(tier.level) });
-    game.start();
+    game.start(); game.skipTutorial();
     for (const [first, second] of game.state.solution.slice(0, 2)) {
       game.select(first); game.select(second); game.advance(0.2);
     }
@@ -146,7 +146,7 @@ test('四档各3个有空位重排样本保留空位、水果、时间，扣主�
 
 test('复用4×6/101重排样本：正常消除进入无合法对后系统免费重排，停表且不扣任何道具', () => {
   const game = new Game({ random: random(101), storage: storage(6) });
-  game.start();
+  game.start(); game.skipTutorial();
   // Fixed legal prefix on the same approved sample, rather than injected board state.
   const prefix = [[1, 2], [5, 6], [4, 7], [0, 11], [3, 16], [8, 9], [10, 12], [20, 22]];
   for (const [first, second] of prefix.slice(0, -1)) {
@@ -179,7 +179,7 @@ test('后续引导与音频偏好通过同一公开边界保存，读取快照�
   game.updatePreferences({ tutorialSeen: true, music: false, effects: false });
   const reopened = new Game({ storage: store });
   expect(reopened.state.progress).toEqual({ currentLevel: 1, completed: false, tutorialSeen: true, music: false, effects: false });
-  game.start();
+  game.start(); game.skipTutorial();
   const state = game.state;
   state.progress.currentLevel = 40; state.tools.hint = 99;
   expect(game.state.progress.currentLevel).toBe(1);
